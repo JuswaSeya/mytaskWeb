@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>myTask · Dashboard</title>
+
+  <link rel="stylesheet" href="dashboard.css" />
+
+  <!-- Inline styles for the modal (so it works even if dashboard.css is missing them) -->
+  <style>
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 460px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 { margin: 0; font-family: 'Playfair Display', serif; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 26px;
+      cursor: pointer;
+      line-height: 1;
+      color: #666;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label { font-size: 13px; font-weight: 600; color: #444; }
+    .form-group input,
+    .form-group select {
+      padding: 10px 12px;
+      border: 1px solid #d6d6d6;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #4f46e5;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn-secondary {
+      background: #f1f1f1;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-secondary:hover { background: #e5e5e5; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ---------- Sidebar ---------- -->
+  <aside class="sidebar">
+    <div class="logo">
+      <p>Welcome to CEA's myTask Project</p>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="nav-item active">
+        <i class="Dashboard"></i> Dashboard
+      </a>
+      <a href="#" class="nav-item">
+        <i class="my tasks"></i> My Tasks
+      </a>
+      <a href="#" class="nav-item">
+        <i class="calendar"></i> Calendar
+      </a>
+      <a href="#" class="nav-item">
+        <i class="analytics"></i> Analytics
+      </a>
+      <a href="#" class="nav-item">
+        <i class="settings"></i> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <i class="my name"></i>
+      <span>Joshua Cea</span>
+    </div>
+  </aside>
+
+  <!-- ---------- Main content ---------- -->
+  <main class="main">
+    <header class="header">
+      <h1>Welcome back, <span>Joshua Cea</span> 👋</h1>
+      <div class="header-actions">
+        <button class="btn-primary" id="openTaskModal">
+          New Task
+        </button>
+        <div class="avatar">AM</div>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Total tasks</div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-sub">+3 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">In progress</div>
+        <div class="stat-value" id="stat-progress">0</div>
+        <div class="stat-sub">2 due soon</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Completed</div>
+        <div class="stat-value" id="stat-completed">0</div>
+        <div class="stat-sub">+5 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Overdue</div>
+        <div class="stat-value">2</div>
+        <div class="stat-sub">needs attention</div>
+      </div>
+    </section>
+
+    <section class="task-section">
+      <div class="task-header">
+        <h2>Recent tasks</h2>
+        <div class="task-filters">
+          <span class="filter-btn active">All</span>
+          <span class="filter-btn">In progress</span>
+          <span class="filter-btn">Completed</span>
+        </div>
+      </div>
+
+      <table class="task-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Due date</th>
+            <th>Assignee</th>
+          </tr>
+        </thead>
+        <tbody id="task-table-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- ---------- New Task Modal ---------- -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>New Task</h2>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+
+      <form id="newTaskForm">
+        <div class="form-group">
+          <label for="taskTitle">Task title *</label>
+          <input type="text" id="taskTitle" required placeholder="e.g. Finish report" />
+        </div>
+
+        <div class="form-group">
+          <label for="taskPriority">Priority</label>
+          <select id="taskPriority">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="taskStatus">Status</label>
+          <select id="taskStatus">
+            <option value="In progress" selected>In progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="taskDue">Due date</label>
+          <input type="date" id="taskDue" />
+        </div>
+
+        <div class="form-group">
+          <label for="taskAssignee">Assignee</label>
+          <input type="text" id="taskAssignee" placeholder="e.g. Joshua Cea" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelModal">Cancel</button>
+          <button type="submit" class="btn-primary" id="saveTaskBtn">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supabase library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // --- REPLACE WITH YOUR ACTUAL KEYS ---
+    const SUPABASE_URL = 'https://heedighjmrfvpqtveqle.supabase.co';
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZWRpZ2hqbXJmdnBxdHZlcWxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0ODE5MDEsImV4cCI6MjEwODA1NzkwMX0.zPqb2XEMIOFJUXi96IWdweh3N4T9yp85n7y0arSiFuc';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadDashboardData() {
+      const { data: tasks, error } = await supabaseClient
+        .from('tasks')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching data:', error);
+        alert('Failed to load tasks. Check console for details.');
+        return;
+      }
+
+      const total = tasks.length;
+      const inProgress = tasks.filter(t => t.status === 'In progress').length;
+      const completed = tasks.filter(t => t.status === 'Completed').length;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-progress').innerText = inProgress;
+      document.getElementById('stat-completed').innerText = completed;
+
+      const tbody = document.getElementById('task-table-body');
+      tbody.innerHTML = '';
+
+      tasks.forEach(task => {
+        let priorityClass = 'badge-low';
+        if (task.priority === 'High') priorityClass = 'badge-high';
+        if (task.priority === 'Medium') priorityClass = 'badge-medium';
+
+        let statusClass = 'badge-medium';
+        if (task.status === 'Completed') statusClass = 'badge-done';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="task-name">
+              <i class="fas ${task.icon_class || 'fa-tasks'}"></i> ${task.title}
+            </div>
+          </td>
+          <td><span class="badge ${priorityClass}">${task.priority}</span></td>
+          <td><span class="badge ${statusClass}">${task.status}</span></td>
+          <td><div class="due"><i class="far fa-calendar"></i> ${task.due_date || '—'}</div></td>
+          <td><div class="avatar small">${task.assignee}</div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadDashboardData();
+
+    // ---------- Modal controls ----------
+    const modal = document.getElementById('taskModal');
+    const openBtn = document.getElementById('openTaskModal');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelModal');
+    const form = document.getElementById('newTaskForm');
+    const saveBtn = document.getElementById('saveTaskBtn');
+
+    function openModal()  { modal.classList.add('open'); }
+    function closeModal() { modal.classList.remove('open'); form.reset(); }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal(); // click outside to close
+    });
+
+    // ---------- Submit new task ----------
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const newTask = {
+        title:      document.getElementById('taskTitle').value.trim(),
+        priority:   document.getElementById('taskPriority').value,
+        status:     document.getElementById('taskStatus').value,
+        due_date:   document.getElementById('taskDue').value || null,
+        assignee:   document.getElementById('taskAssignee').value.trim() || 'Unassigned',
+        icon_class: 'fa-tasks',
+      };
+
+      const { error } = await supabaseClient.from('tasks').insert([newTask]);
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Task';
+
+      if (error) {
+        console.error('Insert error:', error);
+        alert('Could not save task: ' + error.message);
+        return;
+      }
+
+      closeModal();
+      loadDashboardData(); // refresh stats + table
+    });
+  </script>
+</body>
+</html>
